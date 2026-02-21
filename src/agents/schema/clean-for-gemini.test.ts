@@ -64,6 +64,10 @@ describe("cleanSchemaForGemini (recursion)", () => {
         }
      };
      const cleaned = cleanSchemaForGemini(schema) as any;
+     // The 'not' keyword should be preserved (it recurses into the value)
+     expect(cleaned.not).toBeDefined();
+     expect(cleaned.not.type).toBe("object");
+     // But unsupported keywords inside it should be removed
      expect(cleaned.not.additionalProperties).toBeUndefined();
   });
 
