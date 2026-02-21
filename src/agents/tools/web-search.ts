@@ -683,16 +683,8 @@ async function runSearxngSearch(params: {
   };
 
   if (params.apiKey) {
-    // Prioritize X-Self-Hosted-Auth for private instances as typically requested,
-    // but also standard Authorization header is good practice if supported.
-    // Based on user feedback, we prioritize X-Self-Hosted-Auth.
+    // The `X-Self-Hosted-Auth` header is used by some SearXNG instances for authentication.
     headers["X-Self-Hosted-Auth"] = params.apiKey;
-    // We also add Authorization: Bearer as a fallback/standard if the instance supports it.
-    // Some instances might choke if both are present? Unlikely, but safer to stick to one if we can.
-    // But since we want to be compatible with potential standard setups, let's just add Authorization too
-    // unless it conflicts. The user said "The logic should prioritize the SearXNG-specific header format".
-    // I will include both for maximum compatibility unless it causes issues.
-    headers["Authorization"] = `Bearer ${params.apiKey}`;
   }
 
   const res = await fetch(url.toString(), {
@@ -967,15 +959,13 @@ export function createWebSearchTool(options?: {
           ? perplexityAuth?.apiKey
           : provider === "grok"
             ? resolveGrokApiKey(grokConfig)
-            : provider === "searxng"
-              ? "not-required" // handled via searxngBaseUrl check
-              : resolveSearchApiKey(search);
+            : resolveSearchApiKey(search);
 
-      if (provider === "searxng" && !searxngBaseUrl) {
-        return jsonResult(missingSearchKeyPayload(provider));
-      }
-
-      if (!apiKey && provider !== "searxng") {
+      if (provider === "searxng") {
+        if (!searxngBaseUrl) {
+          return jsonResult(missingSearchKeyPayload(provider));
+        }
+      } else if (!apiKey) {
         return jsonResult(missingSearchKeyPayload(provider));
       }
       const params = args as Record<string, unknown>;

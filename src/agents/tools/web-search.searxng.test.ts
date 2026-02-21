@@ -172,7 +172,7 @@ describe("Web Search: SearXNG", () => {
 
       const headers = fetchSpy.mock.calls[0][1]?.headers as Record<string, string>;
       expect(headers["X-Self-Hosted-Auth"]).toBe("my-api-key");
-      expect(headers["Authorization"]).toBe("Bearer my-api-key");
+      expect(headers["Authorization"]).toBeUndefined();
     });
 
     it("handles 429 Rate Limit error", async () => {
@@ -200,13 +200,9 @@ describe("Web Search: SearXNG", () => {
 
       if (!tool) throw new Error("Tool not created");
 
-      try {
-        await tool.execute("call-id", { query: "test" });
-      } catch (error) {
-        expect((error as Error).message).toContain(
-          "SearXNG API error (429): Too Many Requests",
-        );
-      }
+      await expect(tool.execute("call-id", { query: "test" })).rejects.toThrow(
+        "SearXNG API error (429): Too Many Requests",
+      );
     });
 
     it("handles 403 Forbidden error", async () => {
@@ -234,13 +230,9 @@ describe("Web Search: SearXNG", () => {
 
       if (!tool) throw new Error("Tool not created");
 
-      try {
-        await tool.execute("call-id", { query: "test" });
-      } catch (error) {
-        expect((error as Error).message).toContain(
-          "SearXNG API error (403): Forbidden",
-        );
-      }
+      await expect(tool.execute("call-id", { query: "test" })).rejects.toThrow(
+        "SearXNG API error (403): Forbidden",
+      );
     });
   });
 });
