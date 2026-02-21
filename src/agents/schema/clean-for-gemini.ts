@@ -282,6 +282,9 @@ function cleanSchemaForGeminiWithDefs(
   const cleaned: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(obj)) {
+    // 1. Filter out unsupported keywords immediately.
+    //    This handles top-level primitives like minLength, maximum, etc.,
+    //    as well as complex unsupported keywords like patternProperties.
     if (GEMINI_UNSUPPORTED_SCHEMA_KEYWORDS.has(key)) {
       continue;
     }
@@ -334,7 +337,14 @@ function cleanSchemaForGeminiWithDefs(
       cleaned[key] = value.map((variant) =>
         cleanSchemaForGeminiWithDefs(variant, nextDefs, refStack),
       );
+    } else if (key === "enum" || key === "default") {
+      // Keep primitive values as-is
+      cleaned[key] = value;
+    } else if (value && typeof value === "object") {
+      // Recurse into all other object values (e.g. not, if, then, else, or unknown keywords)
+      cleaned[key] = cleanSchemaForGeminiWithDefs(value, nextDefs, refStack);
     } else {
+      // Keep other primitives as-is
       cleaned[key] = value;
     }
   }
